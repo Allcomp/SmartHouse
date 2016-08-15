@@ -35,6 +35,8 @@ public class StringEncDec {
 		characters.put("Ů", "?chid=12L?");
 		characters.put("ž", "?chid=13?");
 		characters.put("Ž", "?chid=13L?");
+		characters.put("ý", "?chid=14?");
+		characters.put("Ý", "?chid=14L?");
 	}
 	
 	public static String encode(String str) {
