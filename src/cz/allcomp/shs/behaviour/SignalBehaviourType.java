@@ -43,6 +43,10 @@ public enum SignalBehaviourType {
 	PWM_WATCHER(12),
 	TIMED_BUTTON(13),
 	OVERCONTROL_BUTTON(14),
+	SOFTWARE_DISABLER(15), /* disable output after delay, gets activated, 
+							when input is active */
+	SOFTWARE_ENABLER(16), /* enable output after delay, gets activated, 
+							when input is inactive */
 	AIR_COND_INPUT_WATCHER(100),
 	AIR_COND_VIRTUAL_WATCHER(101);
 	

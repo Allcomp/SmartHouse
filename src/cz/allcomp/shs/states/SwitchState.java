@@ -41,6 +41,10 @@ public enum SwitchState {
 		return this.intVal;
 	}
 	
+	public short toShort() {
+		return (short)this.intVal;
+	}
+	
 	@Override
 	public String toString() {
 		return this.stringVal;

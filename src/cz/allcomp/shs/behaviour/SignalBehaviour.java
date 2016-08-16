@@ -120,6 +120,12 @@ public class SignalBehaviour extends Behaviour {
 			case AIR_COND_VIRTUAL_WATCHER:
 				this.airCondVWBehaviour();
 				break;
+			case SOFTWARE_DISABLER:
+				this.softwareDisablerBehaviour();
+				break;
+			case SOFTWARE_ENABLER:
+				this.softwareEnablerBehaviour();
+				break;
 		default:
 			break;
 		}
@@ -655,6 +661,48 @@ public class SignalBehaviour extends Behaviour {
 			outputEwc.setStateValue((short)SwitchState.ON.toInt());
 			Thread.sleep(2000);
 			outputEwc.setStateValue((short)SwitchState.OFF.toInt());
+			
+		} catch (Exception e) {
+			Messages.error("Error occured!");
+			Messages.error(Messages.getStackTrace(e));
+		}
+	}
+
+	private void softwareDisablerBehaviour() {
+		try {
+			EwcManager em = this.ewcManager;
+			EwcUnit outputEwc = em.getEwcUnitBySoftwareId(this.outputEWC);
+			EwcUnit inputEwc = em.getEwcUnitBySoftwareId(this.inputEWC);
+			
+			if(inputEwc.getStateValue() == SwitchState.ON.toInt()) {
+				for(int i = 0; i < (this.delay/100); i++) {
+					if(outputEwc.getStateValue() == SwitchState.OFF.toShort())
+						return;
+					Thread.sleep(100);
+				}
+				outputEwc.setStateValue(SwitchState.OFF.toShort());
+			}
+			
+		} catch (Exception e) {
+			Messages.error("Error occured!");
+			Messages.error(Messages.getStackTrace(e));
+		}
+	}
+
+	private void softwareEnablerBehaviour() {
+		try {
+			EwcManager em = this.ewcManager;
+			EwcUnit outputEwc = em.getEwcUnitBySoftwareId(this.outputEWC);
+			EwcUnit inputEwc = em.getEwcUnitBySoftwareId(this.inputEWC);
+			
+			if(inputEwc.getStateValue() == SwitchState.OFF.toInt()) {
+				for(int i = 0; i < (this.delay/100); i++) {
+					if(outputEwc.getStateValue() == SwitchState.ON.toShort())
+						return;
+					Thread.sleep(100);
+				}
+				outputEwc.setStateValue(SwitchState.ON.toShort());
+			}
 			
 		} catch (Exception e) {
 			Messages.error("Error occured!");
