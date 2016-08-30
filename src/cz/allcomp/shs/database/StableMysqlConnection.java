@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import cz.allcomp.shs.logging.Messages;
 
@@ -62,6 +63,10 @@ public class StableMysqlConnection {
 	 * @param name The name of the database
 	 * @param port The port used by MySQL server
 	 */
+	
+	private boolean localConnected;
+	
+	
 	public StableMysqlConnection(String host, String user, String pass,
 			String name, int port) {
 		super();
@@ -75,7 +80,20 @@ public class StableMysqlConnection {
 		this.lastStatement = null;
 		this.connection = null;
 		
+		this.localConnected = false;
+		
 		this.makeNewConnection();
+	}
+	
+	public boolean isConnected() {
+		if(this.connection == null)
+			return false;
+		try {
+			return !this.connection.isClosed();
+		} catch (SQLException e) {
+			Messages.error(Messages.getStackTrace(e));
+			return false;
+		}
 	}
 	
 	/**
@@ -100,22 +118,22 @@ public class StableMysqlConnection {
 	 * @return Set of results returned by MySQL database
 	 */
 	public ResultSet executeQuery(String sql) {
-                if(this.connection == null) {
-                    Messages.error("Could not execute query: connection is null!");
-                    if(this.remainingRetries != 0) {
-                            this.remainingRetries--;
-                            Messages.info("Trying to repair connection...");
-                            this.makeNewConnection();
-                            this.executeQuery(sql);
-                    } else {
-                            this.renewRemainingRetries();
-                            Messages.error("Fatal error connectivity! "
-                                            +"It is no longer applicable.");
-                    }
-                    return null;
-                }
+	    if(this.connection == null) {
+	        Messages.error("Could not execute query: connection is null!");
+	        if(this.remainingRetries != 0) {
+                this.remainingRetries--;
+                Messages.info("Trying to repair connection...");
+                this.makeNewConnection();
+                this.executeQuery(sql);
+	        } else {
+                this.renewRemainingRetries();
+                Messages.error("Fatal error connectivity! "
+                                +"It is no longer applicable.");
+	        }
+	        return null;
+	    }
 		try {
-                        this.closeLastStatement();
+            this.closeLastStatement();
 			this.lastStatement = this.connection.prepareStatement(sql);
 			try {
 				ResultSet rs = this.lastStatement.executeQuery();
@@ -163,22 +181,22 @@ public class StableMysqlConnection {
 	 * @return Number of affected rows in database
 	 */
 	public int executeUpdate(String sql) {
-                if(this.connection == null) {
-                    Messages.error("Could not execute query: connection is null!");
-                    if(this.remainingRetries != 0) {
-                            this.remainingRetries--;
-                            Messages.info("Trying to repair connection...");
-                            this.makeNewConnection();
-                            this.executeQuery(sql);
-                    } else {
-                            this.renewRemainingRetries();
-                            Messages.error("Fatal error connectivity! "
-                                            +"It is no longer applicable.");
-                    }
-                    return 0;
-                }
+        if(this.connection == null) {
+            Messages.error("Could not execute query: connection is null!");
+            if(this.remainingRetries != 0) {
+                this.remainingRetries--;
+                Messages.info("Trying to repair connection...");
+                this.makeNewConnection();
+                this.executeQuery(sql);
+            } else {
+                this.renewRemainingRetries();
+                Messages.error("Fatal error connectivity! "
+                                +"It is no longer applicable.");
+            }
+            return 0;
+        }
 		try {
-                        this.closeLastStatement();
+            this.closeLastStatement();
 			this.lastStatement = this.connection.prepareStatement(sql);
 			try {
 				int res = this.lastStatement.executeUpdate();
@@ -231,7 +249,7 @@ public class StableMysqlConnection {
 	 */
 	public void makeNewConnection() {
 		try {
-                        this.closeLastStatement();
+            this.closeLastStatement();
 			if(!(this.connection == null || this.connection.isClosed()))
 				this.connection.close();
 			
@@ -239,11 +257,15 @@ public class StableMysqlConnection {
 				"jdbc:mysql://"+this.host+":"+this.port+"/"+this.name, 
 				this.user, this.pass
 			);
-			if(connection.isClosed())
+			if(connection.isClosed()) {
 				System.out.println("neok");
-			else
+				this.localConnected = false;
+			} else {
 				System.out.println("ok");
+				this.localConnected = true;
+			}
 		} catch (Exception e) {
+			this.localConnected = false;
 			Messages.error("SQL Error occured:\n> " + e.getMessage());
             Messages.error(Messages.getStackTrace(e));
 		}
@@ -319,5 +341,10 @@ public class StableMysqlConnection {
 	 */
 	public int getPort() {
 		return this.port;
+	}
+	
+	public boolean checkConnection() {
+		this.makeNewConnection();
+		return this.localConnected;
 	}
 }

@@ -126,6 +126,12 @@ public class SignalBehaviour extends Behaviour {
 			case SOFTWARE_ENABLER:
 				this.softwareEnablerBehaviour();
 				break;
+			case REVERSE_BUTTON:
+				this.reverseButtonBehaviour();
+				break;
+			case OVERCONTROL_REVERSE_BUTTON:
+				this.overcontrolReverseButtonBehaviour();
+				break;
 		default:
 			break;
 		}
@@ -136,24 +142,164 @@ public class SignalBehaviour extends Behaviour {
 		return true;
 	}
 	
+	private boolean buttonBehaviour_shouldStop;
+	private short buttonBehaviour_valueOFF;
+	
 	private void buttonBehaviour() {
 		try {
 			EwcManager em = this.ewcManager;
-			EwcUnit outputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.outputEWC);
-			EwcUnit inputEwc = (EwcUnitInput) em.getEwcUnitBySoftwareId(this.inputEWC);
+			EwcUnit outputEwc = em.getEwcUnitBySoftwareId(this.outputEWC);
+			EwcUnit inputEwc = em.getEwcUnitBySoftwareId(this.inputEWC);
 			
-			short valueON;
-			short valueOFF;
+			short valueON = this.getMetadata().getShort("valueOn", (short)1);
+			short valueOFF = this.getMetadata().getShort("valueOff", (short)0);
+			long inputBlocking = this.getMetadata().getLong("inputBlocking", 0);
+			long outputBlocking = this.getMetadata().getLong("outputBlocking", 0);
+			long inputBlockingDelay = this.getMetadata().getLong("inputBlockingDelay", 0);
+			long outputBlockingDelay = this.getMetadata().getLong("outputBlockingDelay", 0);
+			boolean overcontrol = this.getMetadata().getBoolean("overcontrol", false);
+			boolean reverseOn = this.getMetadata().getBoolean("reverseOn", false);
+			boolean reverseOff = this.getMetadata().getBoolean("reverseOff", false);
+			long delayOn = this.getMetadata().getLong("delayOn", 0);
+			long delayOff = this.getMetadata().getLong("delayOff", 0);
 			
-			try {
-				valueON = Short.parseShort(this.getMetadata().getValue("valueON"));
-				valueOFF = Short.parseShort(this.getMetadata().getValue("valueOFF"));
-			} catch(NumberFormatException e) {
-				valueON = 1;
-				valueOFF = 0;
+			if(inputEwc.isBlockedForSignalBehaviour())
+				return;
+			
+			if(outputEwc.isBlockedForSignalBehaviour())
+				return;
+			
+			if(inputBlocking > 0) {
+				new Thread(() -> {
+					try {
+						Thread.sleep(inputBlockingDelay);
+					} catch (Exception e) {
+						Messages.warning(Messages.getStackTrace(e));
+					}
+					inputEwc.setBlockedForSignalBehaviour(true);
+					try {
+						Thread.sleep(inputBlocking);
+					} catch (Exception e) {
+						Messages.warning(Messages.getStackTrace(e));
+					}
+					inputEwc.setBlockedForSignalBehaviour(false);
+				}).start();
 			}
 			
-			if(inputEwc.getStateValue() == SwitchState.ON.toInt()) {
+			if(outputBlocking > 0) {
+				new Thread(() -> {
+					try {
+						Thread.sleep(outputBlockingDelay);
+					} catch (Exception e) {
+						Messages.warning(Messages.getStackTrace(e));
+					}
+					outputEwc.setBlockedForSignalBehaviour(true);
+					try {
+						Thread.sleep(outputBlocking);
+					} catch (Exception e) {
+						Messages.warning(Messages.getStackTrace(e));
+					}
+					outputEwc.setBlockedForSignalBehaviour(false);
+				}).start();
+			}
+
+			int switchStateCompareOutputOn = reverseOn ? SwitchState.OFF.toInt() : SwitchState.ON.toInt();
+			int switchStateCompareOutputOff = reverseOff ? SwitchState.OFF.toInt() : SwitchState.ON.toInt();
+			
+			this.buttonBehaviour_valueOFF = valueOFF;
+			
+			if(outputEwc.getStateValue() == valueOFF && this.turnOnConditions.isTrue()) {
+				if(inputEwc.getStateValue() == switchStateCompareOutputOff) {
+					outputEwc.setStateValue(valueON);
+					outputEwc.setOvercontroled(overcontrol);
+					this.buttonBehaviour_shouldStop = false;
+					if(delayOn > 0) {
+						new Thread(() -> {
+							for(int i = 0; i < delayOn/10; i++) {
+								try {
+									Thread.sleep(10);
+								} catch (Exception e) {
+									e.printStackTrace();
+								}
+								if(this.buttonBehaviour_shouldStop)
+									return;
+							}
+							if(this.turnOffConditions.isTrue())
+								outputEwc.setStateValue(this.buttonBehaviour_valueOFF);
+						}).start();
+					}
+				}
+			} else if(outputEwc.getStateValue() == valueON) {
+				if(inputEwc.getStateValue() == switchStateCompareOutputOn) {
+					outputEwc.setOvercontroled(false);
+					if(delayOff > 0)
+						Thread.sleep(delayOff);
+					if(this.turnOffConditions.isTrue()) {
+						outputEwc.setStateValue(valueOFF);
+						this.buttonBehaviour_shouldStop = true;
+					}
+				}
+			}
+		} catch (Exception e) {
+			Messages.error("Error occured!");
+			Messages.error(Messages.getStackTrace(e));
+		}
+	}
+	
+	private void reverseButtonBehaviour() {
+		try {
+			EwcManager em = this.ewcManager;
+			EwcUnit outputEwc = em.getEwcUnitBySoftwareId(this.outputEWC);
+			EwcUnit inputEwc = em.getEwcUnitBySoftwareId(this.inputEWC);
+			
+			short valueON = this.getMetadata().getShort("valueOn", (short)1);
+			short valueOFF = this.getMetadata().getShort("valueOff", (short)0);
+			long inputBlocking = this.getMetadata().getLong("inputBlocking", 0);
+			long outputBlocking = this.getMetadata().getLong("outputBlocking", 0);
+			long inputBlockingDelay = this.getMetadata().getLong("inputBlockingDelay", 0);
+			long outputBlockingDelay = this.getMetadata().getLong("outputBlockingDelay", 0);
+
+			if(inputEwc.isBlockedForSignalBehaviour())
+				return;
+			
+			if(outputEwc.isBlockedForSignalBehaviour())
+				return;
+			
+			if(inputBlocking > 0) {
+				new Thread(() -> {
+					try {
+						Thread.sleep(inputBlockingDelay);
+					} catch (Exception e) {
+						Messages.warning(Messages.getStackTrace(e));
+					}
+					inputEwc.setBlockedForSignalBehaviour(true);
+					try {
+						Thread.sleep(inputBlocking);
+					} catch (Exception e) {
+						Messages.warning(Messages.getStackTrace(e));
+					}
+					inputEwc.setBlockedForSignalBehaviour(false);
+				}).start();
+			}
+			
+			if(outputBlocking > 0) {
+				new Thread(() -> {
+					try {
+						Thread.sleep(outputBlockingDelay);
+					} catch (Exception e) {
+						Messages.warning(Messages.getStackTrace(e));
+					}
+					outputEwc.setBlockedForSignalBehaviour(true);
+					try {
+						Thread.sleep(outputBlocking);
+					} catch (Exception e) {
+						Messages.warning(Messages.getStackTrace(e));
+					}
+					outputEwc.setBlockedForSignalBehaviour(false);
+				}).start();
+			}
+			
+			if(inputEwc.getStateValue() == SwitchState.OFF.toInt()) {
 				if(outputEwc.getStateValue() == valueOFF && this.turnOnConditions.isTrue()) {
 					outputEwc.setStateValue(valueON);
 				} else if(outputEwc.getStateValue() == valueON) {
@@ -172,32 +318,20 @@ public class SignalBehaviour extends Behaviour {
 	private void switchBehaviour() {
 		try {
 			EwcManager em = this.ewcManager;
-			EwcUnit outputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.outputEWC);
-			EwcUnit inputEwc = (EwcUnitInput) em.getEwcUnitBySoftwareId(this.inputEWC);
+			EwcUnit outputEwc = em.getEwcUnitBySoftwareId(this.outputEWC);
+			EwcUnit inputEwc = em.getEwcUnitBySoftwareId(this.inputEWC);
 			
-			short valueON;
-			short valueOFF;
-			
-			try {
-				valueON = Short.parseShort(this.getMetadata().getValue("valueON"));
-				valueOFF = Short.parseShort(this.getMetadata().getValue("valueOFF"));
-			} catch(NumberFormatException e) {
-				valueON = 1;
-				valueOFF = 0;
-			}
+			short valueON = this.getMetadata().getShort("valueOn", (short)1);
+			short valueOFF = this.getMetadata().getShort("valueOff", (short)0);
 			
 			if(inputEwc.getStateValue() == SwitchState.ON.toInt()) {
-				if(outputEwc.getStateValue() == valueOFF) {
-					if(this.turnOnConditions.isTrue())
-						outputEwc.setStateValue(valueON);
-				}
+				if(this.turnOnConditions.isTrue())
+					outputEwc.setStateValue(valueON);
 			} else if(inputEwc.getStateValue() == SwitchState.OFF.toInt()) {
-				if(outputEwc.getStateValue() == valueON) {
-					if(this.delay > 0)
-						Thread.sleep(this.delay);
-					if(this.turnOffConditions.isTrue())
-						outputEwc.setStateValue(valueOFF);
-				}
+				if(this.delay > 0)
+					Thread.sleep(this.delay);
+				if(this.turnOffConditions.isTrue())
+					outputEwc.setStateValue(valueOFF);
 			}
 		} catch (Exception e) {
 			Messages.error("Error occured!");
@@ -208,25 +342,72 @@ public class SignalBehaviour extends Behaviour {
 	private void timedBehaviour() {
 		try {
 			EwcManager em = this.ewcManager;
-			EwcUnit outputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.outputEWC);
+			EwcUnit outputEwc = em.getEwcUnitBySoftwareId(this.outputEWC);
+			EwcUnit inputEwc = em.getEwcUnitBySoftwareId(this.inputEWC);
 			
-			short valueON;
-			short valueOFF;
+			short valueON = this.getMetadata().getShort("valueOn", (short)1);
+			short valueOFF = this.getMetadata().getShort("valueOff", (short)0);
+			long inputBlocking = this.getMetadata().getLong("inputBlocking", 0);
+			long outputBlocking = this.getMetadata().getLong("outputBlocking", 0);
+			long inputBlockingDelay = this.getMetadata().getLong("inputBlockingDelay", 0);
+			long outputBlockingDelay = this.getMetadata().getLong("outputBlockingDelay", 0);
 			
-			try {
-				valueON = Short.parseShort(this.getMetadata().getValue("valueON"));
-				valueOFF = Short.parseShort(this.getMetadata().getValue("valueOFF"));
-			} catch(NumberFormatException e) {
-				valueON = 1;
-				valueOFF = 0;
+			if(inputEwc.isBlockedForSignalBehaviour())
+				return;
+			
+			if(outputEwc.isBlockedForSignalBehaviour())
+				return;
+			
+			if(inputBlocking > 0) {
+				new Thread(() -> {
+					try {
+						Thread.sleep(inputBlockingDelay);
+					} catch (Exception e) {
+						Messages.warning(Messages.getStackTrace(e));
+					}
+					inputEwc.setBlockedForSignalBehaviour(true);
+					try {
+						Thread.sleep(inputBlocking);
+					} catch (Exception e) {
+						Messages.warning(Messages.getStackTrace(e));
+					}
+					inputEwc.setBlockedForSignalBehaviour(false);
+				}).start();
 			}
 			
-			if(outputEwc.getStateValue() == valueOFF && this.turnOnConditions.isTrue()) {
-				outputEwc.setStateValue(valueON);
-				if(delay > 0)
-					Thread.sleep(delay);
-				outputEwc.setStateValue(valueOFF);
+			if(outputBlocking > 0) {
+				new Thread(() -> {
+					try {
+						Thread.sleep(outputBlockingDelay);
+					} catch (Exception e) {
+						Messages.warning(Messages.getStackTrace(e));
+					}
+					outputEwc.setBlockedForSignalBehaviour(true);
+					try {
+						Thread.sleep(outputBlocking);
+					} catch (Exception e) {
+						Messages.warning(Messages.getStackTrace(e));
+					}
+					outputEwc.setBlockedForSignalBehaviour(false);
+				}).start();
 			}
+			
+			if(inputEwc.getStateValue() == SwitchState.ON.toShort()) {
+				if(this.turnOnConditions.isTrue()) {
+					outputEwc.setStateValue(valueON);
+					if(delay > 0)
+						Thread.sleep(delay);
+					outputEwc.setStateValue(valueOFF);
+				}
+			} else {
+				if(this.turnOffConditions.isTrue()) {
+					outputEwc.setStateValue(valueON);
+					if(delay > 0)
+						Thread.sleep(delay);
+					outputEwc.setStateValue(valueOFF);
+				}
+			}
+			
 		} catch (Exception e) {
 			Messages.error("Error occured!");
 			Messages.error(Messages.getStackTrace(e));
@@ -236,19 +417,11 @@ public class SignalBehaviour extends Behaviour {
 	private void pirSensorBehaviour() {
 		try {
 			EwcManager em = this.ewcManager;
-			EwcUnit outputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.outputEWC);
-			EwcUnit inputEwc = (EwcUnitInput) em.getEwcUnitBySoftwareId(this.inputEWC);
+			EwcUnit outputEwc = em.getEwcUnitBySoftwareId(this.outputEWC);
+			EwcUnit inputEwc = em.getEwcUnitBySoftwareId(this.inputEWC);
 			
-			short valueON;
-			short valueOFF;
-			
-			try {
-				valueON = Short.parseShort(this.getMetadata().getValue("valueON"));
-				valueOFF = Short.parseShort(this.getMetadata().getValue("valueOFF"));
-			} catch(NumberFormatException e) {
-				valueON = 1;
-				valueOFF = 0;
-			}
+			short valueON = this.getMetadata().getShort("valueOn", (short)1);
+			short valueOFF = this.getMetadata().getShort("valueOff", (short)0);
 			
 			if(!outputEwc.isOvercontroled()) {
 				if(inputEwc.getStateValue() == SwitchState.OFF.toInt()) {
@@ -260,12 +433,13 @@ public class SignalBehaviour extends Behaviour {
 					if(this.delay > 0) {
 						Thread.sleep(this.delay);
 					}
-					if(this.turnOffConditions.isTrue())
+					if(this.turnOffConditions.isTrue()) {
 						this.pirBehaviourDelayCounter--;
-					if(this.pirBehaviourDelayCounter < 0) 
-						this.pirBehaviourDelayCounter = 0;
-					if(this.pirBehaviourDelayCounter == 0) {
-						outputEwc.setStateValue(valueOFF);
+						if(this.pirBehaviourDelayCounter < 0) 
+							this.pirBehaviourDelayCounter = 0;
+						if(this.pirBehaviourDelayCounter == 0) {
+							outputEwc.setStateValue(valueOFF);
+						}
 					}
 				}
 			}
@@ -277,8 +451,8 @@ public class SignalBehaviour extends Behaviour {
 
 	private void negationBehaviour() {
 		EwcManager em = this.ewcManager;
-		EwcUnit outputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.outputEWC);
-		EwcUnit inputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.inputEWC);
+		EwcUnit outputEwc = em.getEwcUnitBySoftwareId(this.outputEWC);
+		EwcUnit inputEwc = em.getEwcUnitBySoftwareId(this.inputEWC);
 
 		if(inputEwc.getStateValue() == 1)
 			if(this.turnOffConditions.isTrue())
@@ -290,8 +464,8 @@ public class SignalBehaviour extends Behaviour {
 
 	private void onOnlyNegationBehaviour() {
 		EwcManager em = this.ewcManager;
-		EwcUnit outputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.outputEWC);
-		EwcUnit inputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.inputEWC);
+		EwcUnit outputEwc = em.getEwcUnitBySoftwareId(this.outputEWC);
+		EwcUnit inputEwc = em.getEwcUnitBySoftwareId(this.inputEWC);
 
 		if(inputEwc.getStateValue() == SwitchState.ON.toInt())
 			if(this.turnOffConditions.isTrue())
@@ -311,8 +485,8 @@ public class SignalBehaviour extends Behaviour {
 	
 	private void regulatorBehaviour() {
 		EwcManager em = this.ewcManager;
-		EwcUnit outputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.outputEWC);
-		EwcUnit inputEwc = (EwcUnitInput) em.getEwcUnitBySoftwareId(this.inputEWC);
+		EwcUnit outputEwc = em.getEwcUnitBySoftwareId(this.outputEWC);
+		EwcUnit inputEwc = em.getEwcUnitBySoftwareId(this.inputEWC);
 
 		this.regulator_currentValue = outputEwc.getStateValue();
 		
@@ -387,36 +561,26 @@ public class SignalBehaviour extends Behaviour {
 	private void thermostatBehaviour() {
 		EwcManager em = this.ewcManager;
 		EwcUnitOutput outputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.outputEWC);
-		EwcUnitInput inputEwc = (EwcUnitInput) em.getEwcUnitBySoftwareId(this.inputEWC);
-		
-		double hystUp;
-		double hystDown;
-		
-		try {
-			hystUp = Double.parseDouble(this.getMetadata().getValue("hystUp"));
-			hystDown = Double.parseDouble(this.getMetadata().getValue("hystDown"));
-		} catch(NumberFormatException e) {
-			hystUp = 1.0;
-			hystDown = 1.0;
-		}
+		EwcUnitInput inputEwc = (EwcUnitInput) em.getEwcUnitBySoftwareId(this.inputEWC);		
+
+		double hystUp = this.getMetadata().getDouble("hystUp", 1.0);
+		double hystDown = this.getMetadata().getDouble("hystDown", 1.0);
 		
 		if(inputEwc.getTemperatureCelsius() < (inputEwc.getTargetTemperatureCelsius() - hystDown)) {
-			if(outputEwc.getStateValue() == SwitchState.OFF.toInt())
-				if(this.turnOnConditions.isTrue())
-					outputEwc.setStateValue((short)SwitchState.ON.toInt());
+			if(this.turnOnConditions.isTrue())
+				outputEwc.setStateValue((short)SwitchState.ON.toInt());
 		}
 		
 		if(inputEwc.getTemperatureCelsius() > (inputEwc.getTargetTemperatureCelsius() + hystUp)) {
-			if(outputEwc.getStateValue() == SwitchState.ON.toInt())
-				if(this.turnOffConditions.isTrue())
-					outputEwc.setStateValue((short)SwitchState.OFF.toInt());
+			if(this.turnOffConditions.isTrue())
+				outputEwc.setStateValue((short)SwitchState.OFF.toInt());
 		}
 	}
 	
 	private void virtualPwmBehaviour() {
 		EwcManager em = this.ewcManager;
-		EwcUnit outputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.outputEWC);
-		EwcUnit inputEwc = (EwcUnitInput) em.getEwcUnitBySoftwareId(this.inputEWC);
+		EwcUnit outputEwc = em.getEwcUnitBySoftwareId(this.outputEWC);
+		EwcUnit inputEwc = em.getEwcUnitBySoftwareId(this.inputEWC);
 		
 		if(inputEwc.getStateValue() >= 0 && inputEwc.getStateValue() <= 100) {
 			outputEwc.setStateValue(inputEwc.getStateValue());
@@ -426,19 +590,11 @@ public class SignalBehaviour extends Behaviour {
 	private void sunblindButtonBehaviour() {
 		try {
 			EwcManager em = this.ewcManager;
-			EwcUnit outputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.outputEWC);
-			EwcUnit inputEwc = (EwcUnitInput) em.getEwcUnitBySoftwareId(this.inputEWC);
+			EwcUnit outputEwc = em.getEwcUnitBySoftwareId(this.outputEWC);
+			EwcUnit inputEwc = em.getEwcUnitBySoftwareId(this.inputEWC);
 			
-			short valueON;
-			short valueOFF;
-			
-			try {
-				valueON = Short.parseShort(this.getMetadata().getValue("valueON"));
-				valueOFF = Short.parseShort(this.getMetadata().getValue("valueOFF"));
-			} catch(NumberFormatException e) {
-				valueON = 1;
-				valueOFF = 0;
-			}
+			short valueON = this.getMetadata().getShort("valueOn", (short)1);
+			short valueOFF = this.getMetadata().getShort("valueOff", (short)0);
 			
 			if(inputEwc.getStateValue() == SwitchState.ON.toInt()) {
 				if(outputEwc.getStateValue() == valueOFF) {
@@ -469,8 +625,8 @@ public class SignalBehaviour extends Behaviour {
 
 	private void onOnlyActivationBehaviour() {
 		EwcManager em = this.ewcManager;
-		EwcUnit inputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.inputEWC);
-		EwcUnit outputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.outputEWC);
+		EwcUnit inputEwc = em.getEwcUnitBySoftwareId(this.inputEWC);
+		EwcUnit outputEwc = em.getEwcUnitBySoftwareId(this.outputEWC);
 
 		if(inputEwc.getStateValue() == SwitchState.ON.toInt())
 			if(this.turnOffConditions.isTrue())
@@ -480,32 +636,20 @@ public class SignalBehaviour extends Behaviour {
 	private void reverseSwitchBehaviour() {
 		try {
 			EwcManager em = this.ewcManager;
-			EwcUnit outputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.outputEWC);
-			EwcUnit inputEwc = (EwcUnitInput) em.getEwcUnitBySoftwareId(this.inputEWC);
+			EwcUnit outputEwc = em.getEwcUnitBySoftwareId(this.outputEWC);
+			EwcUnit inputEwc = em.getEwcUnitBySoftwareId(this.inputEWC);
 			
-			short valueON;
-			short valueOFF;
-			
-			try {
-				valueON = Short.parseShort(this.getMetadata().getValue("valueON"));
-				valueOFF = Short.parseShort(this.getMetadata().getValue("valueOFF"));
-			} catch(NumberFormatException e) {
-				valueON = 1;
-				valueOFF = 0;
-			}
+			short valueON = this.getMetadata().getShort("valueOn", (short)1);
+			short valueOFF = this.getMetadata().getShort("valueOff", (short)0);
 			
 			if(inputEwc.getStateValue() == SwitchState.ON.toInt()) {
-				if(outputEwc.getStateValue() == valueON) {
-					if(this.turnOnConditions.isTrue())
-						outputEwc.setStateValue(valueOFF);
-				}
+				if(this.turnOnConditions.isTrue())
+					outputEwc.setStateValue(valueOFF);
 			} else if(inputEwc.getStateValue() == SwitchState.OFF.toInt()) {
-				if(outputEwc.getStateValue() == valueOFF) {
-					if(this.delay > 0)
-						Thread.sleep(this.delay);
-					if(this.turnOffConditions.isTrue())
-						outputEwc.setStateValue(valueON);
-				}
+				if(this.delay > 0)
+					Thread.sleep(this.delay);
+				if(this.turnOffConditions.isTrue())
+					outputEwc.setStateValue(valueON);
 			}
 		} catch (Exception e) {
 			Messages.error("Error occured!");
@@ -542,19 +686,11 @@ public class SignalBehaviour extends Behaviour {
 	private void timedButtonBehaviour() {
 		try {
 			EwcManager em = this.ewcManager;
-			EwcUnit outputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.outputEWC);
-			EwcUnit inputEwc = (EwcUnitInput) em.getEwcUnitBySoftwareId(this.inputEWC);
+			EwcUnit outputEwc = em.getEwcUnitBySoftwareId(this.outputEWC);
+			EwcUnit inputEwc = em.getEwcUnitBySoftwareId(this.inputEWC);
 			
-			short valueON;
-			short valueOFF;
-			
-			try {
-				valueON = Short.parseShort(this.getMetadata().getValue("valueON"));
-				valueOFF = Short.parseShort(this.getMetadata().getValue("valueOFF"));
-			} catch(NumberFormatException e) {
-				valueON = 1;
-				valueOFF = 0;
-			}
+			short valueON = this.getMetadata().getShort("valueOn", (short)1);
+			short valueOFF = this.getMetadata().getShort("valueOff", (short)0);
 			
 			this.timedButtonBehaviour_valueOFF = valueOFF;
 			
@@ -591,21 +727,105 @@ public class SignalBehaviour extends Behaviour {
 	private void overcontrolButtonBehaviour() {
 		try {
 			EwcManager em = this.ewcManager;
-			EwcUnit outputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.outputEWC);
-			EwcUnit inputEwc = (EwcUnitInput) em.getEwcUnitBySoftwareId(this.inputEWC);
+			EwcUnit outputEwc = em.getEwcUnitBySoftwareId(this.outputEWC);
+			EwcUnit inputEwc = em.getEwcUnitBySoftwareId(this.inputEWC);
 			
-			short valueON;
-			short valueOFF;
+			short valueON = this.getMetadata().getShort("valueOn", (short)1);
+			short valueOFF = this.getMetadata().getShort("valueOff", (short)0);
+			long inputBlocking = this.getMetadata().getLong("inputBlocking", 0);
+			long outputBlocking = this.getMetadata().getLong("outputBlocking", 0);
+
+			if(inputEwc.isBlockedForSignalBehaviour())
+				return;
 			
-			try {
-				valueON = Short.parseShort(this.getMetadata().getValue("valueON"));
-				valueOFF = Short.parseShort(this.getMetadata().getValue("valueOFF"));
-			} catch(NumberFormatException e) {
-				valueON = 1;
-				valueOFF = 0;
+			if(outputEwc.isBlockedForSignalBehaviour())
+				return;
+			
+			if(inputBlocking > 0) {
+				inputEwc.setBlockedForSignalBehaviour(true);
+				new Thread(() -> {
+					try {
+						Thread.sleep(inputBlocking);
+					} catch (Exception e) {
+						Messages.warning(Messages.getStackTrace(e));
+					}
+					inputEwc.setBlockedForSignalBehaviour(false);
+				}).start();
+			}
+			
+			if(outputBlocking > 0) {
+				outputEwc.setBlockedForSignalBehaviour(true);
+				new Thread(() -> {
+					try {
+						Thread.sleep(outputBlocking);
+					} catch (Exception e) {
+						Messages.warning(Messages.getStackTrace(e));
+					}
+					outputEwc.setBlockedForSignalBehaviour(false);
+				}).start();
 			}
 			
 			if(inputEwc.getStateValue() == SwitchState.ON.toInt()) {
+				if(outputEwc.getStateValue() == valueOFF && this.turnOnConditions.isTrue()) {
+					outputEwc.setStateValue(valueON);
+					outputEwc.setOvercontroled(true);
+				} else if(outputEwc.getStateValue() == valueON) {
+					if(this.delay > 0)
+						Thread.sleep(this.delay);
+					if(this.turnOffConditions.isTrue()) {
+						outputEwc.setStateValue(valueOFF);
+						outputEwc.setOvercontroled(false);
+					}
+				}
+			}
+		} catch (Exception e) {
+			Messages.error("Error occured!");
+			Messages.error(Messages.getStackTrace(e));
+		}
+	}
+	
+	private void overcontrolReverseButtonBehaviour() {
+		try {
+			EwcManager em = this.ewcManager;
+			EwcUnit outputEwc = em.getEwcUnitBySoftwareId(this.outputEWC);
+			EwcUnit inputEwc = em.getEwcUnitBySoftwareId(this.inputEWC);
+			
+			short valueON = this.getMetadata().getShort("valueOn", (short)1);
+			short valueOFF = this.getMetadata().getShort("valueOff", (short)0);
+			long inputBlocking = this.getMetadata().getLong("inputBlocking", 0);
+			long outputBlocking = this.getMetadata().getLong("outputBlocking", 0);
+
+			if(inputEwc.isBlockedForSignalBehaviour())
+				return;
+			
+			if(outputEwc.isBlockedForSignalBehaviour())
+				return;
+			
+			if(inputBlocking > 0) {
+				inputEwc.setBlockedForSignalBehaviour(true);
+				new Thread(() -> {
+					try {
+						Thread.sleep(inputBlocking);
+					} catch (Exception e) {
+						Messages.warning(Messages.getStackTrace(e));
+					}
+					inputEwc.setBlockedForSignalBehaviour(false);
+				}).start();
+			}
+			
+			if(outputBlocking > 0) {
+				outputEwc.setBlockedForSignalBehaviour(true);
+				new Thread(() -> {
+					try {
+						Thread.sleep(outputBlocking);
+					} catch (Exception e) {
+						Messages.warning(Messages.getStackTrace(e));
+					}
+					outputEwc.setBlockedForSignalBehaviour(false);
+				}).start();
+			}
+			
+			if(inputEwc.getStateValue() == SwitchState.OFF.toInt()) {
 				if(outputEwc.getStateValue() == valueOFF && this.turnOnConditions.isTrue()) {
 					outputEwc.setStateValue(valueON);
 					outputEwc.setOvercontroled(true);

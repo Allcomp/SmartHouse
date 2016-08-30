@@ -84,7 +84,7 @@ public class Messages {
 					System.out.println(msg);
 		}
 				
-		if(LOG_PATH != null) {
+		if(LOG_PATH != null && (LOG_ERRORS || LOG_WARNINGS || LOG_INFO)) {
             try {
                 PrintWriter vystup = new PrintWriter(new FileOutputStream(LOG_PATH, true));
                 if(type == MessageType.ERROR) {

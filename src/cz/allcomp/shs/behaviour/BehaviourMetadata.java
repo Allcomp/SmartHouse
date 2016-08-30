@@ -50,6 +50,82 @@ public class BehaviourMetadata {
 	}
 	
 	public String getValue(String key) {
-		return dataMap.get(key);
+		if(dataMap.containsKey(key))
+			return dataMap.get(key);
+		else
+			return null;
+	}
+	
+	public int getInt(String key, int defaultValue) {
+		if(dataMap.containsKey(key))
+			try {
+				return Integer.parseInt(dataMap.get(key));
+			} catch (NumberFormatException e) {
+				return defaultValue;
+			}
+		else
+			return defaultValue;
+	}
+	
+	public short getShort(String key, short defaultValue) {
+		if(dataMap.containsKey(key))
+			try {
+				return Short.parseShort(dataMap.get(key));
+			} catch (NumberFormatException e) {
+				return defaultValue;
+			}
+		else
+			return defaultValue;
+	}
+	
+	public boolean getBoolean(String key, boolean defaultValue) {
+		if(dataMap.containsKey(key))
+			try {
+				return Boolean.parseBoolean(dataMap.get(key));
+			} catch (NumberFormatException e) {
+				return defaultValue;
+			}
+		else
+			return defaultValue;
+	}
+	
+	public long getLong(String key, long defaultValue) {
+		if(dataMap.containsKey(key))
+			try {
+				return Long.parseLong(dataMap.get(key));
+			} catch (NumberFormatException e) {
+				return defaultValue;
+			}
+		else
+			return defaultValue;
+	}
+	
+	public float getFloat(String key, float defaultValue) {
+		if(dataMap.containsKey(key))
+			try {
+				return Float.parseFloat(dataMap.get(key));
+			} catch (NumberFormatException e) {
+				return defaultValue;
+			}
+		else
+			return defaultValue;
+	}
+	
+	public double getDouble(String key, double defaultValue) {
+		if(dataMap.containsKey(key))
+			try {
+				return Double.parseDouble(dataMap.get(key));
+			} catch (NumberFormatException e) {
+				return defaultValue;
+			}
+		else
+			return defaultValue;
+	}
+	
+	public String getString(String key, String defaultValue) {
+		if(dataMap.containsKey(key))
+			return dataMap.get(key);
+		else
+			return defaultValue;
 	}
 }

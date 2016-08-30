@@ -83,7 +83,7 @@ public class SmartServer extends Thread {
 	
 	private Set<Integer> activeEwcs;
 
-	public static final String VERSION = "3.2.3";
+	public static final String VERSION = "3.3.1";
 	
 	public static final String[] VERSION_NAMES = {"Eros", "Thaumas", "Boreas"};
 	public static final String VERSION_NAME = VERSION_NAMES[2];

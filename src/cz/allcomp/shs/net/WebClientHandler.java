@@ -45,6 +45,7 @@ import cz.allcomp.shs.net.clientcommands.CCgetpulsing;
 import cz.allcomp.shs.net.clientcommands.CCgetversion;
 import cz.allcomp.shs.net.clientcommands.CCgetversionandname;
 import cz.allcomp.shs.net.clientcommands.CCgetversionname;
+import cz.allcomp.shs.net.clientcommands.CCmacro;
 import cz.allcomp.shs.net.clientcommands.CCoutput;
 import cz.allcomp.shs.net.clientcommands.CCoutputs;
 import cz.allcomp.shs.net.clientcommands.CCrestartewcmanager;
@@ -120,6 +121,7 @@ public class WebClientHandler implements Runnable {
 		ClientCommand.register(new CCsimulationstop("simulationstop"));
 		ClientCommand.register(new CCsimulationstate("simulationstate"));
 		ClientCommand.register(new CCsimulationgettimes("simulationgettimes"));
+		ClientCommand.register(new CCmacro("macro"));
 	}
 	
 	@Override

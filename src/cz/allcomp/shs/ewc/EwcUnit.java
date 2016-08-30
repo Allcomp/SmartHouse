@@ -41,6 +41,7 @@ public abstract class EwcUnit {
 	private final EwcValueType valueType;
 	private final List<Integer> securityIds;
 	private final boolean virtual;
+	private boolean blockedForSignalBehaviour;
 
 	protected short stateValue;
 	protected short lastStateValue;
@@ -71,9 +72,18 @@ public abstract class EwcUnit {
 		this.timeCounterStart = System.currentTimeMillis();
 		this.overcontroled = false;
 		this.preventDatabaseLogging = false;
+		this.blockedForSignalBehaviour = false;
 	}
 	
 	public abstract void update();
+	
+	public void setBlockedForSignalBehaviour(boolean val) {
+		this.blockedForSignalBehaviour = val;
+	}
+	
+	public boolean isBlockedForSignalBehaviour() {
+		return this.blockedForSignalBehaviour;
+	}
 	
 	public void setStateValue(short value) {
 		lastStateValue = stateValue;

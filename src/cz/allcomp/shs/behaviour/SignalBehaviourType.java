@@ -28,7 +28,7 @@ package cz.allcomp.shs.behaviour;
 
 public enum SignalBehaviourType {
 	UNKNOWN(-1),
-	BUTTON(0), /* button... */
+	BUTTON(0), /* button (raising edge)... */
 	SWITCH(1), /* switch... */
 	TIMED(2), /* delayed turn off */
 	PIR_SENSOR(3), /* PIR sensor... */
@@ -47,6 +47,8 @@ public enum SignalBehaviourType {
 							when input is active */
 	SOFTWARE_ENABLER(16), /* enable output after delay, gets activated, 
 							when input is inactive */
+	REVERSE_BUTTON(17), /* button (falling edge)... */
+	OVERCONTROL_REVERSE_BUTTON(18),
 	AIR_COND_INPUT_WATCHER(100),
 	AIR_COND_VIRTUAL_WATCHER(101);
 	
