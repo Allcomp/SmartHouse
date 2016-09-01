@@ -11,7 +11,7 @@ DataStore.addControl(new Control(<?=($row[0])?>, <?=($row[1])?>, "<?=($row[2])?>
 
 <?php $rsMacros = $database->executeQuery("SELECT * FROM `macros`;"); ?>
 <?php while ($row = $rsMacros->fetch_row()) :?>
-DataStore.addMacro(new Macro(<?=($row[0])?>, "<?=($row[1])?>", "<?=($row[2])?>"));
+DataStore.addMacro(new Macro(<?=($row[0])?>, "<?=($row[1])?>", "<?=($row[3])?>"));
 <?php endwhile; ?>
 
 <?php $rsControls2 = $database->executeQuery("SELECT * FROM `controls` ORDER BY `last_time_usage` DESC LIMIT 0,10 ;"); ?>

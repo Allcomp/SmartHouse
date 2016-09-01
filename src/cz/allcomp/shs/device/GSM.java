@@ -67,13 +67,13 @@ public class GSM {
     }
     
     public String sendMessage(String phoneNumber, String message) throws IOException, InterruptedException {
-    	String sendString = "\""+phoneNumber+"\"\r";
-		this.send("AT+CMGS="+sendString);
+		this.send("AT+CMGS=\""+phoneNumber+"\"\r");
 		Thread.sleep(100);
 		this.send(message+"\032");
 		Thread.sleep(500);
 		String ret = this.receive();
 		Thread.sleep(100);
+		Messages.info("Message sent: " + phoneNumber + " \"" + message + "\"");
 		return ret;
     }
     
@@ -141,5 +141,25 @@ public class GSM {
 			Messages.error(Messages.getStackTrace(e));
 		}
     	this.pin.high();
+    }
+    
+    public void test() throws IOException, InterruptedException {
+    	Messages.info("<GSM "+this.id+"> send: AT+CMGF?");
+    	this.send("AT+CMGF?");
+    	Thread.sleep(100);
+    	Messages.info("<GSM "+this.id+"> receive: " + this.receive());
+    	Thread.sleep(100);
+    	
+    	Messages.info("<GSM "+this.id+"> send: AT+CREG?");
+    	this.send("AT+CREG?");
+    	Thread.sleep(100);
+    	Messages.info("<GSM "+this.id+"> receive: " + this.receive());
+    	Thread.sleep(100);
+    	
+    	Messages.info("<GSM "+this.id+"> send: AT+CSQ");
+    	this.send("AT+CSQ");
+    	Thread.sleep(100);
+    	Messages.info("<GSM "+this.id+"> receive: " + this.receive());
+    	Thread.sleep(100);
     }
 }

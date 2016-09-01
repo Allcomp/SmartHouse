@@ -51,6 +51,8 @@ public class SecuritySystem implements Runnable {
 	private int lastNofiticationCount;
 	private boolean alarmActivated;
 	
+	private EwcUnit firstInput;
+	
 	private EwcManager ewcManager;
 	
 	public SecuritySystem(int id, String name, EwcManager ewcManager, long securityActivationDelay, int notificationNumberToAlarm) {
@@ -66,6 +68,7 @@ public class SecuritySystem implements Runnable {
 		this.ewcManager = ewcManager;
 		this.id = id;
 		this.name = name;
+		this.firstInput = null;
 	}
 	
 	public int getId() {
@@ -92,11 +95,17 @@ public class SecuritySystem implements Runnable {
 		return this.securityBehaviour;
 	}
 	
+	public EwcUnit getFirstInput() {
+		return this.firstInput;
+	}
+	
 	public void notifyStateChange(EwcUnit ewc) {
 		if(ewc.getSecurityIds().contains(this.getId()))
-			if(ewc instanceof EwcUnitInput)
-				if(this.isRunning())
-					this.notificationCount++;
+			if(this.isRunning()) {
+				this.notificationCount++;
+				if(this.firstInput == null)
+					this.firstInput = ewc;
+			}
 	}
 	
 	public void loadSecurityInputs() {
@@ -182,6 +191,7 @@ public class SecuritySystem implements Runnable {
 		
 		this.alarmActivated = false;
 		//this.securityBehaviour.clear();
+		this.firstInput = null;
 		
 		Messages.info("Security system deactivated.");
 		

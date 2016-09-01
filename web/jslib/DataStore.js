@@ -49,7 +49,7 @@ return DataStore.lastUsedControls;
 DataStore.generateMacrosItemElement = function(id, macro) {
     var elem = document.createElement("div");
     elem.setAttribute("class", "item");
-    elem.setAttribute("onclick", "executeMacro(DataStore.macros[" + id + "].controls); notification('aplikováno');");
+    elem.setAttribute("onclick", "executeMacro(DataStore.macros[" + id + "].command); notification('aplikováno');");
 
     var labelElem = document.createElement("div");
     labelElem.setAttribute("class", "label");
@@ -116,6 +116,9 @@ DataStore.generateRoomControlsItemElement = function(control) {
 	} else if(control.applianceType == 7) {//lock
 		labelIconElem.src = "res/icons/Lock-104.png";
         labelElem.appendChild(labelIconElem);
+	} else if(control.applianceType == 8) {//fan
+		labelIconElem.src = "res/icons/Fan-96.png";
+		labelElem.appendChild(labelIconElem);
 	}
 
     var labelTextElem = document.createElement("div");
@@ -143,10 +146,10 @@ DataStore.generateRoomControlsItemElement = function(control) {
                 "<label for='rad" + DataStore.GLOBAL_RADIOBUTTON_ID_COUNTER + "_3'></label>" +
                 "</div></div>";
             DataStore.GLOBAL_RADIOBUTTON_ID_COUNTER++;
-			controlsElem.innerHTML +=
+			/*controlsElem.innerHTML +=
 				"<div class='sunblindpulse'>"+
 				"<button class='controlUp' data-dbid='" + control.id + "' data-output='" + control.outputs[1] + "'>&uarr;</button> <button class='controlDown' data-dbid='" + control.id + "' data-output='" + control.outputs[0] + "'>&darr;</button>"+
-				"</div>";
+				"</div>";*/
             DataStore.GLOBAL_RADIOBUTTON_ID_COUNTER++;
 		} else {
 		    controlsElem.innerHTML = "<label><input data-dbid='" + control.id + "' data-output='" + control.outputs[0] + "' type='checkbox' class='ios-switch' value='0' /></label>";
@@ -226,10 +229,10 @@ DataStore.generateLastUsedControlsItemElement = function(control) {
                 "<label for='rad" + DataStore.GLOBAL_RADIOBUTTON_ID_COUNTER + "_3'></label>" +
                 "</div></div>";
             DataStore.GLOBAL_RADIOBUTTON_ID_COUNTER++;
-			controlsElem.innerHTML +=
+			/*controlsElem.innerHTML +=
 				"<div class='sunblindpulse'>"+
 				"<button class='controlUp' data-dbid='" + control.id + "' data-output='" + control.outputs[1] + "'>&uarr;</button> <button class='controlDown' data-dbid='" + control.id + "' data-output='" + control.outputs[0] + "'>&darr;</button>"+
-				"</div>";
+				"</div>";*/
             DataStore.GLOBAL_RADIOBUTTON_ID_COUNTER++;
 		} else {
 		    controlsElem.innerHTML = "<label><input data-dbid='" + control.id + "' data-output='" + control.outputs[0] + "' type='checkbox' class='ios-switch' value='0' /></label>";

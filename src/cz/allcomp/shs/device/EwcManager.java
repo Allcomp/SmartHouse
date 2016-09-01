@@ -379,6 +379,12 @@ public class EwcManager implements Runnable {
 			for(GSM gsm : this.gsmModules) {
 				gsm.connectPin(this.gpioRaspi);
 				gsm.enable();
+				try {
+					Thread.sleep(2000);
+					gsm.test();
+				} catch (Exception e) {
+					Messages.error(Messages.getStackTrace(e));
+				}
 			}
 			Messages.info("GSM modules enabled.");
 		}).start();

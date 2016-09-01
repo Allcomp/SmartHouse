@@ -27,10 +27,12 @@
 package cz.allcomp.shs.behaviour;
 
 import java.io.IOException;
+import java.text.Normalizer;
 
 import cz.allcomp.shs.device.EwcManager;
 import cz.allcomp.shs.device.EwcUnit;
 import cz.allcomp.shs.device.GSM;
+import cz.allcomp.shs.device.SecuritySystem;
 import cz.allcomp.shs.logging.Messages;
 import cz.allcomp.shs.states.SwitchState;
 
@@ -126,8 +128,8 @@ public class CalledBehaviour extends Behaviour {
 			Messages.error("<CalledBehaviour->Timed> Output " + this.getOutputEWC() + " does not exist!");
 			return;
 		}
-		int duration = Integer.parseInt(this.metadata.getValue("duration"));
-		
+
+		int duration = this.metadata.getInt("duration", 0);
 		short valOn = this.metadata.getShort("valueOn", SwitchState.ON.toShort());
 		short valOff = this.metadata.getShort("valueOff", SwitchState.OFF.toShort());
 		output.setStateValue(valOn);
@@ -216,8 +218,28 @@ public class CalledBehaviour extends Behaviour {
 		String phoneNumber = this.metadata.getString("phoneNumber", "");
 		String message = this.metadata.getString("message", "SmartHouse suspicious activity!");
 		
+		SecuritySystem ss = this.ewcManager.getServer().getSecuritySystem(this.getSecurityId());
+		if(ss.getFirstInput() != null)
+			message = message.replace("%firstInputDescription%", ss.getFirstInput().getDescription()+"");
+		//remove accents
+		message = Normalizer.normalize(message, Normalizer.Form.NFD);
+		message = message.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
+		
+		long numOfPeriodsTime = (long)((double)this.delay/100.0);
+		for(int i = 0; i < numOfPeriodsTime; i++) {
+			try {
+				Thread.sleep(100);
+				if(this.shouldStop)
+					return;
+			} catch (InterruptedException e) {
+				Messages.warning("Could not sleep a thread!");
+				Messages.warning(Messages.getStackTrace(e));
+			}
+		}		
+
 		if(!phoneNumber.equals(""))
 			try {
+				gsm.setCMGF(1);
 				gsm.sendMessage(phoneNumber, message);
 			} catch (IOException | InterruptedException e) {
 				Messages.error(Messages.getStackTrace(e));

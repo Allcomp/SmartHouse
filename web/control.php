@@ -707,7 +707,7 @@
                 }
             }
 
-            function executeMacro(controls) {
+            /*function executeMacro(controls) {
                 var cmdString = "";
                 for(var i = 0; i < controls.length; i++) {
                     var state = controls[i] < 0 ? "0" : "1";
@@ -717,6 +717,12 @@
                 cmdString = cmdString.substr(1);
                 var script = document.createElement('script');
                 script.src = 'http://<?=$_CONFIG['ip']?>:<?=$_CONFIG['port']?>/voidCatch/outputs/' + cmdString;
+                document.getElementsByTagName('head')[0].appendChild(script);
+            }*/
+	    
+	    function executeMacro(command) {
+                var script = document.createElement('script');
+                script.src = 'http://<?=$_CONFIG['ip']?>:<?=$_CONFIG['port']?>/voidCatch/macro/' + command;
                 document.getElementsByTagName('head')[0].appendChild(script);
             }
 
