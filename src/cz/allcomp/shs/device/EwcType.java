@@ -24,26 +24,18 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cz.allcomp.shs.ewc;
+package cz.allcomp.shs.device;
 
-public enum EwcValueType {
-	UNKNOWN(-1), DIGITAL(0), TEMPERATURE(1), PWM(2), RFID(3);
+public enum EwcType {
+	UNKNOWN("unknown"), INPUT("IN"), OUTPUT("OUT");
 	
-	private int intVal;
+	private String mark;
 	
-	private EwcValueType(int intVal) {
-		this.intVal = intVal;
+	private EwcType(String mark) {
+		this.mark = mark;
 	}
 	
-	public int toInt() {
-		return this.intVal;
-	}
-	
-	public static EwcValueType getByInt(int val) {
-		for(EwcValueType esvt : EwcValueType.values()) {
-			if(esvt.toInt() == val)
-				return esvt;
-		}
-		return UNKNOWN;
+	public String getMark() {
+		return this.mark;
 	}
 }

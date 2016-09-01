@@ -26,9 +26,9 @@
 
 package cz.allcomp.shs.behaviour;
 
-import cz.allcomp.shs.ewc.EwcManager;
-import cz.allcomp.shs.ewc.EwcUnit;
-import cz.allcomp.shs.ewc.EwcUnitInput;
+import cz.allcomp.shs.device.EwcManager;
+import cz.allcomp.shs.device.EwcUnit;
+import cz.allcomp.shs.device.EwcUnitInput;
 import cz.allcomp.shs.util.Time;
 import cz.allcomp.shs.util.Utility;
 

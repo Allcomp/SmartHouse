@@ -1,6 +1,6 @@
 package cz.allcomp.shs.behaviour;
 
-import cz.allcomp.shs.ewc.EwcUnit;
+import cz.allcomp.shs.device.EwcUnit;
 
 public class MacroEntryTValue extends MacroEntry {
 

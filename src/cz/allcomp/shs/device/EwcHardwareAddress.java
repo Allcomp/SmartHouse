@@ -24,7 +24,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cz.allcomp.shs.ewc;
+package cz.allcomp.shs.device;
 
 import cz.allcomp.shs.logging.Messages;
 

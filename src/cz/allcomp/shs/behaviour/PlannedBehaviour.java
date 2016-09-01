@@ -26,9 +26,11 @@
 
 package cz.allcomp.shs.behaviour;
 
-import cz.allcomp.shs.ewc.EwcManager;
-import cz.allcomp.shs.ewc.EwcUnitOutput;
+import cz.allcomp.shs.device.EwcManager;
+import cz.allcomp.shs.device.EwcUnit;
+import cz.allcomp.shs.device.EwcUnitOutput;
 import cz.allcomp.shs.logging.Messages;
+import cz.allcomp.shs.states.SwitchState;
 import cz.allcomp.shs.util.Time;
 import cz.allcomp.shs.util.TimeHourMinute;
 
@@ -70,12 +72,15 @@ public class PlannedBehaviour extends Behaviour {
 	public void execute() {
 		if(this.type == PlannedBehaviourType.ORDINARY) {
 			long waitTime = TimeHourMinute.computeTimeDifferenceInMinutes(timeStart, timeStop)*60*1000;
+			
 			EwcManager em = this.ewcManager;
-			EwcUnitOutput outputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.outputEWC);
-			short valueON = Short.parseShort(this.getMetadata().getValue("valueON"));
-			short valueOFF = Short.parseShort(this.getMetadata().getValue("valueOFF"));
+			EwcUnit outputEwc = em.getEwcUnitBySoftwareId(this.outputEWC);
+			
+			short valueOn = this.metadata.getShort("valueOn", SwitchState.ON.toShort());
+			short valueOff = this.metadata.getShort("valueOff", SwitchState.OFF.toShort());
+			
 			if(this.turnOnConditions.isTrue())
-				outputEwc.setStateValue(valueON);
+				outputEwc.setStateValue(valueOn);
 			try {
 				Thread.sleep(waitTime);
 			} catch (InterruptedException e) {
@@ -83,15 +88,16 @@ public class PlannedBehaviour extends Behaviour {
 				Messages.error(Messages.getStackTrace(e));
 			}
 			if(this.turnOffConditions.isTrue())
-				outputEwc.setStateValue(valueOFF);
+				outputEwc.setStateValue(valueOff);
 			
 		} else if(this.type == PlannedBehaviourType.REPEATING) {
 			long waitOn = (timeStart.getHour()*60 + timeStart.getMinute())*60*1000;
 			long waitOff = (timeStop.getHour()*60 + timeStop.getMinute())*60*1000;
 			EwcManager em = this.ewcManager;
 			EwcUnitOutput outputEwc = (EwcUnitOutput) em.getEwcUnitBySoftwareId(this.outputEWC);
-			short valueON = Short.parseShort(this.getMetadata().getValue("valueON"));
-			short valueOFF = Short.parseShort(this.getMetadata().getValue("valueOFF"));
+			
+			short valueOn = this.metadata.getShort("valueOn", SwitchState.ON.toShort());
+			short valueOff = this.metadata.getShort("valueOff", SwitchState.OFF.toShort());
 			
 			while(true) {
 				Time time = Time.getTime();
@@ -100,7 +106,7 @@ public class PlannedBehaviour extends Behaviour {
 					break;
 				
 				if(this.turnOnConditions.isTrue())
-					outputEwc.setStateValue(valueON);
+					outputEwc.setStateValue(valueOn);
 				try {
 					Thread.sleep(waitOn);
 				} catch (InterruptedException e) {
@@ -108,7 +114,7 @@ public class PlannedBehaviour extends Behaviour {
 					Messages.error(Messages.getStackTrace(e));
 				}
 				if(this.turnOffConditions.isTrue())
-					outputEwc.setStateValue(valueOFF);
+					outputEwc.setStateValue(valueOff);
 				try {
 					Thread.sleep(waitOff);
 				} catch (InterruptedException e) {

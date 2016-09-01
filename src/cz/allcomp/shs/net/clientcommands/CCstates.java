@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cz.allcomp.shs.SmartServer;
-import cz.allcomp.shs.ewc.EwcUnit;
+import cz.allcomp.shs.device.EwcUnit;
 import cz.allcomp.shs.net.ClientCommand;
 import cz.allcomp.shs.net.ClientStateMessages;
 

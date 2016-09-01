@@ -24,7 +24,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cz.allcomp.shs.ewc;
+package cz.allcomp.shs.device;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -33,6 +33,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import com.pi4j.io.gpio.GpioController;
+import com.pi4j.io.gpio.GpioFactory;
 
 import cz.allcomp.shs.SmartServer;
 import cz.allcomp.shs.allcomplib.transducers.EwcAccess;
@@ -57,6 +60,8 @@ public class EwcManager implements Runnable {
 	private List<EwcUnit> ewcs;
 	private List<Behaviour> behaviour;
 	private Set<Integer> activeEwcs;
+	private List<GSM> gsmModules;
+	private final GpioController gpioRaspi;
 	
 	private boolean shouldStop, running;
 
@@ -70,6 +75,7 @@ public class EwcManager implements Runnable {
 	public EwcManager(SmartServer server) {
 		ewcs = new ArrayList<EwcUnit>();
 		behaviour = new ArrayList<Behaviour>();
+		gsmModules = new ArrayList<GSM>();
 		this.logicThread = new Thread(this);
 		this.plannedBehaviourManager = new PlannedBehaviourManager(this);
 		//this.behaviourConditionManager = new BehaviourConditionManager();
@@ -78,6 +84,7 @@ public class EwcManager implements Runnable {
 		this.activeEwcs = new HashSet<>();
 		this.pulseMaker = new PulseMaker(this);
 		this.running = false;
+		this.gpioRaspi = GpioFactory.getInstance();
 	}
 	
 	public boolean isRunning() {
@@ -92,6 +99,7 @@ public class EwcManager implements Runnable {
 		this.ewcs = ewcs;
 		this.logicThread = new Thread(this);
 		this.shouldStop = false;
+		this.gpioRaspi = GpioFactory.getInstance();
 	}
 	
 	public void setActiveEwcs(Set<Integer> activeEwcs) {
@@ -101,6 +109,17 @@ public class EwcManager implements Runnable {
 	private void addEwcUnit(EwcUnit... ewcs) {
 		for(EwcUnit ewc : ewcs)
 			this.ewcs.add(ewc);
+	}
+	
+	public void setGSMModules(List<GSM> gsmModules) {
+		this.gsmModules = gsmModules;
+	}
+	
+	public GSM getGSMModuleById(short id) {
+		for(GSM gsm : this.gsmModules)
+			if(gsm.getId() == id)
+				return gsm;
+		return null;
 	}
 	
 	private void addBehaviour(Behaviour... behaviour) {
@@ -279,6 +298,10 @@ public class EwcManager implements Runnable {
 		return this.ewcs;
 	}
 	
+	public List<GSM> getGSMModules() {
+		return this.gsmModules;
+	}
+	
 	public EwcUnit getEwcUnitBySoftwareId(int id) {
 		for(EwcUnit ewc : this.ewcs)
 			if(ewc.getSoftwareId() == id)
@@ -350,6 +373,15 @@ public class EwcManager implements Runnable {
 		Messages.info("Starting Pulse Maker...");
 		this.pulseMaker.start();
 		Messages.info("Pulse Maker started.");
+		
+		Messages.info("Enabling GSM modules...");
+		new Thread(()->{
+			for(GSM gsm : this.gsmModules) {
+				gsm.connectPin(this.gpioRaspi);
+				gsm.enable();
+			}
+			Messages.info("GSM modules enabled.");
+		}).start();
 		
 		while(!this.shouldStop) {
 			

@@ -30,7 +30,8 @@ public enum CalledBehaviourType {
 	UNKNOWN(-1),
 	ACTIVATE(0),
 	TIMED(1),
-	SIREN(2);
+	SIREN(2),
+	GSM_SMS(3);
 	
 	private int intVal;
 	

@@ -4,8 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import cz.allcomp.shs.SmartServer;
-import cz.allcomp.shs.ewc.EwcUnitInput;
-import cz.allcomp.shs.ewc.SecuritySystem;
+import cz.allcomp.shs.device.EwcUnitInput;
+import cz.allcomp.shs.device.SecuritySystem;
 import cz.allcomp.shs.net.ClientCommand;
 import cz.allcomp.shs.net.ClientStateMessages;
 

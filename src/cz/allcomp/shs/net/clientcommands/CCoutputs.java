@@ -4,8 +4,8 @@ import java.util.List;
 
 import cz.allcomp.shs.SmartServer;
 import cz.allcomp.shs.behaviour.SignalBehaviour;
-import cz.allcomp.shs.ewc.EwcUnit;
-import cz.allcomp.shs.ewc.EwcUnitOutput;
+import cz.allcomp.shs.device.EwcUnit;
+import cz.allcomp.shs.device.EwcUnitOutput;
 import cz.allcomp.shs.net.ClientCommand;
 import cz.allcomp.shs.net.ClientStateMessages;
 import cz.allcomp.shs.states.SwitchState;

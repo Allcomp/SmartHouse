@@ -27,7 +27,7 @@
 package cz.allcomp.shs.net.commands;
 
 import cz.allcomp.shs.SmartServer;
-import cz.allcomp.shs.ewc.EwcUnitOutput;
+import cz.allcomp.shs.device.EwcUnitOutput;
 import cz.allcomp.shs.logging.Messages;
 
 public class CommandOutput implements CommandHandler {

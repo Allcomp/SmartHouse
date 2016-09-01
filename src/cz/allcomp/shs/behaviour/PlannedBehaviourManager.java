@@ -29,7 +29,7 @@ package cz.allcomp.shs.behaviour;
 import java.util.ArrayList;
 import java.util.List;
 
-import cz.allcomp.shs.ewc.EwcManager;
+import cz.allcomp.shs.device.EwcManager;
 import cz.allcomp.shs.logging.Messages;
 import cz.allcomp.shs.util.Time;
 

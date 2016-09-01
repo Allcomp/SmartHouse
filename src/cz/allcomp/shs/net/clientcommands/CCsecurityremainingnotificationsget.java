@@ -3,7 +3,7 @@ package cz.allcomp.shs.net.clientcommands;
 import java.util.HashMap;
 
 import cz.allcomp.shs.SmartServer;
-import cz.allcomp.shs.ewc.SecuritySystem;
+import cz.allcomp.shs.device.SecuritySystem;
 import cz.allcomp.shs.net.ClientCommand;
 import cz.allcomp.shs.net.ClientStateMessages;
 

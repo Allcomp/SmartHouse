@@ -1,7 +1,7 @@
 package cz.allcomp.shs.net.clientcommands;
 
 import cz.allcomp.shs.SmartServer;
-import cz.allcomp.shs.ewc.WorkingSimulator;
+import cz.allcomp.shs.device.WorkingSimulator;
 import cz.allcomp.shs.net.ClientCommand;
 import cz.allcomp.shs.net.ClientStateMessages;
 

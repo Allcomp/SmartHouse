@@ -26,10 +26,13 @@
 
 package cz.allcomp.shs.behaviour;
 
-import cz.allcomp.shs.ewc.EwcManager;
-import cz.allcomp.shs.ewc.EwcUnit;
-import cz.allcomp.shs.ewc.EwcUnitOutput;
+import java.io.IOException;
+
+import cz.allcomp.shs.device.EwcManager;
+import cz.allcomp.shs.device.EwcUnit;
+import cz.allcomp.shs.device.GSM;
 import cz.allcomp.shs.logging.Messages;
+import cz.allcomp.shs.states.SwitchState;
 
 public class CalledBehaviour extends Behaviour {
 
@@ -64,16 +67,10 @@ public class CalledBehaviour extends Behaviour {
 	public void interrupt() {
 		this.shouldStop = true;
 		EwcUnit output = this.ewcManager.getEwcUnitBySoftwareId(this.getOutputEWC());
-		if(output != null)
-			if(output instanceof EwcUnitOutput) {
-				try {
-					short valOff = Short.parseShort(this.metadata.getValue("valueOFF"));
-					output.setStateValue(valOff);
-				} catch (NumberFormatException e) {
-					Messages.warning("Could not get value valueOFF from metadata!");
-					Messages.warning(Messages.getStackTrace(e));
-				}
-			}
+		if(output != null) {
+			short valOff = this.metadata.getShort("valueOff", SwitchState.OFF.toShort());
+			output.setStateValue(valOff);
+		}
 	}
 
 	@Override
@@ -105,127 +102,126 @@ public class CalledBehaviour extends Behaviour {
 			case SIREN:
 				this.sirenBehaviour();
 				break;
+			case GSM_SMS:
+				this.gsmSMSBehaviour();
+				break;
 		default:
 			break;
 		}
 	}
-	
+
 	private void activateBehaviour() {
 		EwcUnit output = this.ewcManager.getEwcUnitBySoftwareId(this.getOutputEWC());
-		if(output != null)
-			if(output instanceof EwcUnitOutput) {
-				try {
-					short valOn = Short.parseShort(this.metadata.getValue("valueON"));
-					output.setStateValue(valOn);
-				} catch (NumberFormatException e) {
-					Messages.warning("Could not get value valueON from metadata!");
-					Messages.warning(Messages.getStackTrace(e));
-				}
-			}
+		if(output == null) {
+			Messages.error("<CalledBehaviour->Activate> Output " + this.getOutputEWC() + " does not exist!");
+			return;
+		}
+		short valOn = this.metadata.getShort("valueOn", SwitchState.ON.toShort());
+		output.setStateValue(valOn);
 	}
 	
 	private void timedBehaviour() {
 		EwcUnit output = this.ewcManager.getEwcUnitBySoftwareId(this.getOutputEWC());
-		try {
-			int duration = Integer.parseInt(this.metadata.getValue("duration"));
-			if(output != null)
-				if(output instanceof EwcUnitOutput) {
-					try {
-						short valOn = Short.parseShort(this.metadata.getValue("valueON"));
-						short valOff = Short.parseShort(this.metadata.getValue("valueOFF"));
-						output.setStateValue(valOn);
-						
-						if(duration > 0) {
-
-							long numOfPeriods = (long)((double)duration/100.0);
-							for(int i = 0; i < numOfPeriods; i++) {
-								try {
-									Thread.sleep(100);
-									if(this.shouldStop)
-										return;
-								} catch (InterruptedException e) {
-									Messages.warning("Could not sleep a thread!");
-									Messages.warning(Messages.getStackTrace(e));
-								}
-							}
-							
-							output.setStateValue(valOff);
-							
-						} else {
-							output.setStateValue(valOff);
-						}
-						
-					} catch (NumberFormatException e) {
-						Messages.warning("Could not get value valueON from metadata!");
-						Messages.warning(Messages.getStackTrace(e));
-					}
-				}
-		} catch (NumberFormatException e) {
-			Messages.warning("Could not convert String to Integer!");
-			Messages.warning(Messages.getStackTrace(e));
+		if(output == null) {
+			Messages.error("<CalledBehaviour->Timed> Output " + this.getOutputEWC() + " does not exist!");
+			return;
 		}
+		int duration = Integer.parseInt(this.metadata.getValue("duration"));
 		
+		short valOn = this.metadata.getShort("valueOn", SwitchState.ON.toShort());
+		short valOff = this.metadata.getShort("valueOff", SwitchState.OFF.toShort());
+		output.setStateValue(valOn);
+		
+		if(duration > 0) {
+
+			long numOfPeriods = (long)((double)duration/100.0);
+			for(int i = 0; i < numOfPeriods; i++) {
+				try {
+					Thread.sleep(100);
+					if(this.shouldStop)
+						return;
+				} catch (InterruptedException e) {
+					Messages.warning("Could not sleep a thread!");
+					Messages.warning(Messages.getStackTrace(e));
+				}
+			}
+			
+			output.setStateValue(valOff);
+			
+		} else {
+			output.setStateValue(valOff);
+		}
 	}
 	
 	private void sirenBehaviour() {
 		EwcUnit output = this.ewcManager.getEwcUnitBySoftwareId(this.getOutputEWC());
-		try {
-			int timeOn = Integer.parseInt(this.metadata.getValue("timeON"));
-			int timeOff = Integer.parseInt(this.metadata.getValue("timeOFF"));
-			
-			if(output != null)
-				if(output instanceof EwcUnitOutput) {
-					try {
-						short valOn = Short.parseShort(this.metadata.getValue("valueON"));
-						short valOff = Short.parseShort(this.metadata.getValue("valueOFF"));
-						output.setStateValue(valOn);
-						
-						if(timeOn > 0 && timeOff > 0) {
+		if(output == null) {
+			Messages.error("<CalledBehaviour->Siren> Output " + this.getOutputEWC() + " does not exist!");
+			return;
+		}
+		
+		long timeOn = this.metadata.getLong("timeOn", 0);
+		long timeOff = this.metadata.getLong("timeOff", 0);
+		
+		short valOn = this.metadata.getShort("valueOn", SwitchState.ON.toShort());
+		short valOff = this.metadata.getShort("valueOff", SwitchState.OFF.toShort());
+		
+		output.setStateValue(valOn);
+		
+		if(timeOn > 0 && timeOff > 0) {
 
-							while(!this.shouldStop) {
-							
-								output.setStateValue(valOn);
-								
-								long numOfPeriodsTimeOn = (long)((double)timeOn/100.0);
-								for(int i = 0; i < numOfPeriodsTimeOn; i++) {
-									try {
-										Thread.sleep(100);
-										if(this.shouldStop)
-											return;
-									} catch (InterruptedException e) {
-										Messages.warning("Could not sleep a thread!");
-										Messages.warning(Messages.getStackTrace(e));
-									}
-								}
-								
-								output.setStateValue(valOff);
-								
-								long numOfPeriodsTimeOff = (long)((double)timeOff/100.0);
-								for(int i = 0; i < numOfPeriodsTimeOff; i++) {
-									try {
-										Thread.sleep(100);
-										if(this.shouldStop)
-											return;
-									} catch (InterruptedException e) {
-										Messages.warning("Could not sleep a thread!");
-										Messages.warning(Messages.getStackTrace(e));
-									}
-								}
-							}
-							
-						} else {
-							output.setStateValue(valOff);
-						}
-						
-					} catch (NumberFormatException e) {
-						Messages.warning("Could not get value valueON from metadata!");
+			while(!this.shouldStop) {
+			
+				output.setStateValue(valOn);
+				
+				long numOfPeriodsTimeOn = (long)((double)timeOn/100.0);
+				for(int i = 0; i < numOfPeriodsTimeOn; i++) {
+					try {
+						Thread.sleep(100);
+						if(this.shouldStop)
+							return;
+					} catch (InterruptedException e) {
+						Messages.warning("Could not sleep a thread!");
 						Messages.warning(Messages.getStackTrace(e));
 					}
 				}
-		} catch (NumberFormatException e) {
-			Messages.warning("Could not convert String to Integer!");
-			Messages.warning(Messages.getStackTrace(e));
+				
+				output.setStateValue(valOff);
+				
+				long numOfPeriodsTimeOff = (long)((double)timeOff/100.0);
+				for(int i = 0; i < numOfPeriodsTimeOff; i++) {
+					try {
+						Thread.sleep(100);
+						if(this.shouldStop)
+							return;
+					} catch (InterruptedException e) {
+						Messages.warning("Could not sleep a thread!");
+						Messages.warning(Messages.getStackTrace(e));
+					}
+				}
+			}
+			
+		} else {
+			output.setStateValue(valOff);
 		}
+	}
+	
+	private void gsmSMSBehaviour() {
+		GSM gsm = this.ewcManager.getGSMModuleById(this.getOutputEWC());
+		if(gsm == null) {
+			Messages.error("<CalledBehaviour->GSM_SMS> GSM " + this.getOutputEWC() + " does not exist!");
+			return;
+		}
+		
+		String phoneNumber = this.metadata.getString("phoneNumber", "");
+		String message = this.metadata.getString("message", "SmartHouse suspicious activity!");
+		
+		if(!phoneNumber.equals(""))
+			try {
+				gsm.sendMessage(phoneNumber, message);
+			} catch (IOException | InterruptedException e) {
+				Messages.error(Messages.getStackTrace(e));
+			}
 	}
 
 	@Override

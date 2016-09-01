@@ -1,4 +1,4 @@
-package cz.allcomp.shs.ewc;
+package cz.allcomp.shs.device;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

@@ -26,11 +26,11 @@
 
 package cz.allcomp.shs.behaviour;
 
-import cz.allcomp.shs.ewc.EwcManager;
-import cz.allcomp.shs.ewc.EwcUnit;
-import cz.allcomp.shs.ewc.EwcUnitInput;
-import cz.allcomp.shs.ewc.EwcUnitOutput;
-import cz.allcomp.shs.ewc.EwcValueType;
+import cz.allcomp.shs.device.EwcManager;
+import cz.allcomp.shs.device.EwcUnit;
+import cz.allcomp.shs.device.EwcUnitInput;
+import cz.allcomp.shs.device.EwcUnitOutput;
+import cz.allcomp.shs.device.EwcValueType;
 import cz.allcomp.shs.logging.Messages;
 import cz.allcomp.shs.states.SwitchState;
 

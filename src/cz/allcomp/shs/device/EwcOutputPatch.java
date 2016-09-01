@@ -1,4 +1,4 @@
-package cz.allcomp.shs.ewc;
+package cz.allcomp.shs.device;
 
 import java.util.HashMap;
 import java.util.Set;

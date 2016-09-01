@@ -28,6 +28,7 @@ package cz.allcomp.shs;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -47,10 +48,12 @@ import cz.allcomp.shs.allcomplib.transducers.EwcAccessHelper;
 import cz.allcomp.shs.cfg.Configuration;
 import cz.allcomp.shs.database.SqlCommands;
 import cz.allcomp.shs.database.StableMysqlConnection;
-import cz.allcomp.shs.ewc.EwcHardwareType;
-import cz.allcomp.shs.ewc.EwcManager;
-import cz.allcomp.shs.ewc.SecuritySystem;
-import cz.allcomp.shs.ewc.WorkingSimulator;
+import cz.allcomp.shs.device.EwcHardwareType;
+import cz.allcomp.shs.device.EwcManager;
+import cz.allcomp.shs.device.GSM;
+import cz.allcomp.shs.device.RpiPinSelect;
+import cz.allcomp.shs.device.SecuritySystem;
+import cz.allcomp.shs.device.WorkingSimulator;
 import cz.allcomp.shs.files.FileHandler;
 import cz.allcomp.shs.logging.Messages;
 import cz.allcomp.shs.net.NetController;
@@ -65,6 +68,7 @@ public class SmartServer extends Thread {
 	private Configuration mainConfig;
 	private Configuration databaseConfig;
 	private Configuration hardwareConfig;
+	private Configuration gsmConfig;
 	
 	private NetServer netServer;
 	private EwcManager ewcManager;
@@ -83,7 +87,7 @@ public class SmartServer extends Thread {
 	
 	private Set<Integer> activeEwcs;
 
-	public static final String VERSION = "3.3.1";
+	public static final String VERSION = "3.3.2";
 	
 	public static final String[] VERSION_NAMES = {"Eros", "Thaumas", "Boreas"};
 	public static final String VERSION_NAME = VERSION_NAMES[2];
@@ -168,6 +172,10 @@ public class SmartServer extends Thread {
 	
 	public Configuration getHardwareConfig() {
 		return this.hardwareConfig;
+	}
+	
+	public Configuration getGSMConfig() {
+		return this.gsmConfig;
 	}
 	
 	public NetServer getNetServer() {
@@ -389,8 +397,40 @@ public class SmartServer extends Thread {
             	this.ewcOutputPatch = new EwcOutputPatch(this, ewcss);
             }*/
             
+            List<GSM> gsmModules = new ArrayList<>();
+            
+            List<String> gsmLines = FileHandler.readFileToList(this.gsmConfig.getFile());
+            for(String gsmLine : gsmLines) {
+            	String[] gsmLineParts = gsmLine.split("=");
+            	if(gsmLineParts.length == 2) {
+            		try {
+						short number = Short.parseShort(gsmLineParts[0]);
+						String[] params = gsmLineParts[1].split(":");
+		    			if(params.length == 3) {
+		    				try {
+								int speed = Integer.parseInt(params[1]);
+								int pinId = Integer.parseInt(params[2]);
+								Messages.info("GSM module set on port " + params[0] + " at speed " + speed + " (id: " + number + ", pin: " + pinId + ")");
+		        				GSM gsmModule = new GSM(params[0], speed, number, RpiPinSelect.getById(pinId));
+		        				gsmModules.add(gsmModule);
+		        				
+							} catch (Exception e) {
+								Messages.error("GSM module on id " + number + " in hardware configuration has invalid parameters!");
+								Messages.error(Messages.getStackTrace(e));
+							}
+		    			} else {
+		    				Messages.error("GSM module on id " + number + " in hardware configuration has invalid parameters!");
+		    			}
+					} catch (Exception e1) {
+						Messages.error(Messages.getStackTrace(e1));
+					}
+            	}
+            }
+            this.ewcManager.setGSMModules(gsmModules);
+            
             byte[] defaultEwcFromConfig = new byte[128];
-            for(int i = 1; i <= 64; i++) {
+            
+            for(int i = 1; i <= 128; i++) {
             	String s = this.hardwareConfig.get(String.valueOf(i));
             	if(s != null)
             		defaultEwcFromConfig[i-1] = EwcHardwareType.getByString(s).getId();
@@ -494,6 +534,7 @@ public class SmartServer extends Thread {
 		this.mainConfig = new Configuration("config/main.cfg");
 		this.databaseConfig = new Configuration("config/database.cfg");
 		this.hardwareConfig = new Configuration("config/hardware.cfg");
+		this.gsmConfig = new Configuration("config/gsm.cfg");
 	}
 	
 	private void saveConfig() {

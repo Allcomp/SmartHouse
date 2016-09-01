@@ -26,7 +26,7 @@
 
 package cz.allcomp.shs.behaviour;
 
-import cz.allcomp.shs.ewc.EwcManager;
+import cz.allcomp.shs.device.EwcManager;
 
 public abstract class Behaviour implements Runnable {
 	
