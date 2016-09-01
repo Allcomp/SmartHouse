@@ -1,6 +1,7 @@
 package cz.allcomp.shs.behaviour;
 
 import cz.allcomp.shs.device.EwcUnit;
+import cz.allcomp.shs.logging.Messages;
 
 public class MacroEntryTValue extends MacroEntry {
 
@@ -18,6 +19,11 @@ public class MacroEntryTValue extends MacroEntry {
 
 	@Override
 	public void execute() {
+		try {
+			Thread.sleep(this.delay);
+		} catch (InterruptedException e) {
+			Messages.warning(Messages.getStackTrace(e));
+		}
 		if(this.noChange)
 			this.io.setStateValueWithoutChange(this.targetValue);
 		else

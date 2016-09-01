@@ -28,6 +28,11 @@ public class MacroEntryTPulse extends MacroEntry {
 
 	@Override
 	public void execute() {
+		try {
+			Thread.sleep(this.delay);
+		} catch (InterruptedException e) {
+			Messages.warning(Messages.getStackTrace(e));
+		}
 		if(this.overcontrol)
 			this.io.setOvercontroled(true);
 		for(int i = 0; i <= this.repeat; i++) {
